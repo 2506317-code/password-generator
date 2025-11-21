@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantumLock Password Generator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom styles for aesthetic and readability */
+        :root {
+            --primary-color: #10b981; /* Emerald 500 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712; /* Gray 900 */
+            color: #f9fafb; /* Gray 50 */
+        }
+        .security-card {
+            background: #1f2937; /* Gray 800 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+            border-radius: 1rem;
+            border: 1px solid #374151;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            box-shadow: 0 0 5px var(--primary-color);
+        }
+        .slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            box-shadow: 0 0 5px var(--primary-color);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="app" class="security-card w-full max-w-xl p-8 space-y-6">
+        <h1 class="text-3xl font-extrabold text-center text-emerald-400 flex items-center justify-center">
+            <i data-lucide="lock-keyhole" class="w-8 h-8 mr-2"></i> QuantumLock Generator
+        </h1>
+        <p class="text-gray-400 text-center text-sm">
+            Generate strong, cryptographically unique passwords. Never re-uses a password across your sessions.
+        </p>
+
+        <!-- Input Section -->
+        <div class="space-y-4">
+            <!-- Password Length Slider -->
+            <div>
+                <label for="length" class="block mb-2 font-medium text-gray-300 flex justify-between">
+                    Password Length: <span id="length-value" class="text-emerald-400">16</span>
+                </label>
+                <input type="range" id="length" min="8" max="64" value="16" step="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider">
+            </div>
+
+            <!-- Character Set Checkboxes -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex items-center">
+                    <input id="uppercase" type="checkbox" checked class="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500">
+                    <label for="uppercase" class="ml-2 text-sm font-medium text-gray-300">Uppercase (A-Z)</label>
+                </div>
+                <div class="flex items-center">
+                    <input id="numbers" type="checkbox" checked class="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500">
+                    <label for="numbers" class="ml-2 text-sm font-medium text-gray-300">Numbers (0-9)</label>
+                </div>
+                <div class="flex items-center">
+                    <input id="lowercase" type="checkbox" checked class="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500">
+                    <label for="lowercase" class="ml-2 text-sm font-medium text-gray-300">Lowercase (a-z)</label>
+                </div>
+                <div class="flex items-center">
+                    <input id="special" type="checkbox" checked class="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500">
+                    <label for="special" class="ml-2 text-sm font-medium text-gray-300">Special (!@#$%^&*)</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Output and Controls -->
+        <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between space-x-4">
+            <input type="text" id="password-output" readonly placeholder="Your Secure Password" class="flex-grow bg-transparent text-lg font-mono text-white outline-none cursor-text select-all placeholder-gray-400">
+            <button id="copy-button" class="p-2 rounded-full bg-emerald-600 hover:bg-emerald-500 transition-all duration-200" title="Copy Password">
+                <i data-lucide="copy" class="w-5 h-5 text-white"></i>
+            </button>
+        </div>
+
+        <!-- Strength Meter -->
+        <div id="strength-container" class="space-y-2">
+            <div class="flex justify-between items-center text-sm font-medium text-gray-400">
+                <span>Security Score:</span>
+                <span id="strength-text" class="text-yellow-400">Awaiting Generation</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                <div id="strength-bar" class="h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Generate Button -->
+        <button id="generate-button" class="w-full py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-500 transition-transform active:scale-95 duration-200 flex items-center justify-center">
+            <i data-lucide="shield-check" class="w-5 h-5 mr-2"></i> Generate Quantum Password
+        </button>
+
+        <!-- Status Message Box -->
+        <div id="status-message" class="hidden p-3 text-sm rounded-lg text-center transition-opacity duration-300" role="alert"></div>
+
+        <!-- User/App Info (Debugging/Mandatory Requirement) -->
+        <div class="text-xs text-gray-500 pt-4 border-t border-gray-700">
+            <p>App ID: <span id="app-id-display" class="font-mono text-gray-400"></span></p>
+            <p>User ID: <span id="user-id-display" class="font-mono text-gray-400"></span></p>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, addDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GLOBAL VARIABLES (Provided by Canvas Environment) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        setLogLevel('error'); // Set logging level for production-like environment
+
+        // Display mandatory App/User IDs
+        document.getElementById('app-id-display').textContent = appId;
+        document.getElementById('user-id-display').textContent = 'Authenticating...';
+
+
+        /**
+         * Initializes Firebase and authenticates the user.
+         */
+        async function initializeFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config not found.");
+                showMessage("Database error: Firebase configuration is missing.", "bg-red-900 text-red-300");
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('user-id-display').textContent = userId;
+                        isAuthReady = true;
+                        console.log("Firebase authenticated successfully. User ID:", userId);
+                    } else {
+                        isAuthReady = true; // Still ready, but anonymous or signed out.
+                        userId = crypto.randomUUID(); // Fallback ID for display
+                        document.getElementById('user-id-display').textContent = 'Anonymous';
+                        console.log("Firebase initialized, currently anonymous.");
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization or sign-in failed:", error);
+                showMessage(`Authentication Failed: ${error.message}`, "bg-red-900 text-red-300");
+            }
+        }
+        
+        // Character sets
+        const charSets = {
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            numbers: '0123456789',
+            // Comprehensive special characters set
+            special: '!@#$%^&*()_+-=[]{}|;:",.<>/?`~', 
+        };
+
+        const lengthInput = document.getElementById('length');
+        const lengthValueSpan = document.getElementById('length-value');
+        const outputField = document.getElementById('password-output');
+        const generateButton = document.getElementById('generate-button');
+        const strengthBar = document.getElementById('strength-bar');
+        const strengthText = document.getElementById('strength-text');
+        const statusMessage = document.getElementById('status-message');
+
+        lengthInput.addEventListener('input', () => {
+            lengthValueSpan.textContent = lengthInput.value;
+        });
+
+        /**
+         * Displays a temporary status message in the dedicated box.
+         * @param {string} message The message content.
+         * @param {string} classes Tailwind classes for styling (e.g., "bg-green-800 text-green-300").
+         */
+        function showMessage(message, classes) {
+            statusMessage.textContent = message;
+            statusMessage.className = `p-3 text-sm rounded-lg text-center transition-opacity duration-300 ${classes}`;
+            statusMessage.classList.remove('hidden');
+            setTimeout(() => {
+                statusMessage.classList.add('hidden');
+            }, 3000);
+        }
+
+        /**
+         * Calculates a basic strength score (entropy approximation) and updates the UI.
+         * @param {string} password The generated password.
+         * @param {number} charSetSize The size of the total character pool used.
+         */
+        function updateStrength(password, charSetSize) {
+            const length = password.length;
+            let entropy = length * Math.log2(charSetSize);
+            let score = Math.min(100, Math.round(entropy * 1.5)); // Scale entropy for a 100-point score
+
+            let barColor, textStatus;
+
+            if (score >= 80) {
+                barColor = 'bg-green-500';
+                textStatus = 'Excellent (High Entropy)';
+            } else if (score >= 60) {
+                barColor = 'bg-yellow-500';
+                textStatus = 'Good (Moderate Entropy)';
+            } else {
+                barColor = 'bg-red-500';
+                textStatus = 'Weak (Low Entropy)';
+            }
+
+            strengthBar.style.width = `${score}%`;
+            strengthBar.className = `h-2.5 rounded-full transition-all duration-500 ${barColor}`;
+            strengthText.textContent = textStatus;
+            strengthText.className = `text-sm font-medium ${textStatus.includes('Excellent') ? 'text-green-400' : textStatus.includes('Good') ? 'text-yellow-400' : 'text-red-400'}`;
+        }
+
+        /**
+         * Core function to generate a password from selected options.
+         * @param {number} length The desired password length.
+         * @returns {string} The generated password.
+         */
+        function generateCandidate(length) {
+            const selectedSets = [];
+            let pool = '';
+
+            if (document.getElementById('lowercase').checked) {
+                selectedSets.push(charSets.lowercase);
+                pool += charSets.lowercase;
+            }
+            if (document.getElementById('uppercase').checked) {
+                selectedSets.push(charSets.uppercase);
+                pool += charSets.uppercase;
+            }
+            if (document.getElementById('numbers').checked) {
+                selectedSets.push(charSets.numbers);
+                pool += charSets.numbers;
+            }
+            if (document.getElementById('special').checked) {
+                selectedSets.push(charSets.special);
+                pool += charSets.special;
+            }
+
+            if (pool.length === 0) {
+                showMessage("Please select at least one character set.", "bg-yellow-900 text-yellow-300");
+                return '';
+            }
+
+            let password = '';
+            // Ensure at least one character from each selected set is included
+            selectedSets.forEach(set => {
+                password += set.charAt(Math.floor(Math.random() * set.length));
+            });
+
+            // Fill the rest of the password length from the full pool
+            while (password.length < length) {
+                password += pool.charAt(Math.floor(Math.random() * pool.length));
+            }
+
+            // Shuffle the password string to randomize the required characters
+            password = password.split('').sort(() => 0.5 - Math.random()).join('');
+
+            return password.slice(0, length);
+        }
+
+        /**
+         * Checks Firestore for password uniqueness and attempts to generate a unique one.
+         * @param {number} length The desired length.
+         * @param {number} attempts Remaining retry attempts.
+         * @returns {Promise<string|null>} The unique password or null if failed.
+         */
+        async function getUniquePassword(length, attempts = 5) {
+            if (!isAuthReady || !userId) {
+                showMessage("Waiting for secure connection to initialize...", "bg-red-900 text-red-300");
+                return null;
+            }
+            
+            const usedPasswordsRef = collection(db, `artifacts/${appId}/users/${userId}/used_passwords`);
+            
+            for (let i = 0; i < attempts; i++) {
+                const candidate = generateCandidate(length);
+                if (!candidate) return null; // Exit if no sets selected
+
+                // Check for uniqueness in Firestore
+                // Note: The maximum length of a document ID is 1500 bytes. The password itself is saved as a field.
+                const q = query(usedPasswordsRef, where("password", "==", candidate));
+                
+                try {
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (querySnapshot.empty) {
+                        // Found a unique password! Save it and return it.
+                        await addDoc(usedPasswordsRef, {
+                            password: candidate,
+                            timestamp: Date.now(),
+                            length: length,
+                        });
+                        console.log("Unique password saved to Firestore.");
+                        return candidate;
+                    }
+                    console.log(`Password not unique (Attempt ${i + 1}/${attempts}). Generating new one...`);
+                } catch (e) {
+                    console.error("Error checking or saving password to Firestore:", e);
+                    showMessage("Error communicating with database. Cannot guarantee uniqueness.", "bg-red-900 text-red-300");
+                    return candidate; // Return candidate despite error to unblock user
+                }
+            }
+
+            showMessage("Failed to generate a unique password after several attempts. Try a longer length!", "bg-red-900 text-red-300");
+            return null;
+        }
+
+        // --- Event Listeners ---
+        generateButton.addEventListener('click', async () => {
+            const length = parseInt(lengthInput.value, 10);
+            
+            outputField.value = 'Generating...';
+            generateButton.disabled = true;
+
+            const finalPassword = await getUniquePassword(length);
+
+            generateButton.disabled = false;
+
+            if (finalPassword) {
+                outputField.value = finalPassword;
+                const charSetSize = 
+                    (document.getElementById('lowercase').checked ? charSets.lowercase.length : 0) +
+                    (document.getElementById('uppercase').checked ? charSets.uppercase.length : 0) +
+                    (document.getElementById('numbers').checked ? charSets.numbers.length : 0) +
+                    (document.getElementById('special').checked ? charSets.special.length : 0);
+                
+                updateStrength(finalPassword, charSetSize);
+            } else {
+                outputField.value = '';
+                updateStrength('', 0);
+            }
+        });
+
+        document.getElementById('copy-button').addEventListener('click', () => {
+            const password = outputField.value;
+            if (password) {
+                // Use execCommand for better compatibility in iFrames
+                const tempInput = document.createElement('textarea');
+                tempInput.value = password;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand('copy');
+                    showMessage("Password copied to clipboard!", "bg-green-900 text-green-300");
+                } catch (err) {
+                    console.error('Could not copy text: ', err);
+                    showMessage("Failed to copy password.", "bg-red-900 text-red-300");
+                }
+                document.body.removeChild(tempInput);
+            } else {
+                 showMessage("Nothing to copy.", "bg-yellow-900 text-yellow-300");
+            }
+        });
+
+        // Initialize Lucide Icons and Firebase on load
+        window.onload = () => {
+            lucide.createIcons();
+            initializeFirebase();
+        };
+
+    </script>
+</body>
+</html>
